@@ -368,7 +368,8 @@
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 12px;
+      overflow-y: auto;
       background: rgba(3, 13, 32, 0.72);
       backdrop-filter: blur(5px);
     }
@@ -378,10 +379,9 @@
     }
 
     .modal {
-      width: 100%;
-      max-width: 700px;
-      max-height: 88vh;
-      overflow-y: auto;
+      width: min(100%, 760px);
+      max-height: 94vh;
+      overflow: hidden;
       border-radius: 20px;
       background: var(--white);
       box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
@@ -400,16 +400,20 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
       padding: 20px 24px;
       color: var(--white);
       background: var(--navy);
     }
 
     .modal-header h2 {
+      min-width: 0;
+      overflow-wrap: anywhere;
       font-size: 1.15rem;
     }
 
     .close-btn {
+      flex: 0 0 auto;
       width: 36px;
       height: 36px;
       display: grid;
@@ -423,22 +427,27 @@
     }
 
     .modal-body {
+      max-height: calc(94vh - 78px);
+      overflow-y: auto;
+      overflow-x: hidden;
       padding: 25px;
     }
 
     .info-row {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
       margin-bottom: 24px;
     }
 
     .info-item {
+      min-width: 0;
       padding: 11px 14px;
       border: 1px solid var(--border);
       border-radius: 9px;
       color: var(--muted);
       font-size: 0.86rem;
+      overflow-wrap: anywhere;
       background: #f8fafc;
     }
 
@@ -448,15 +457,17 @@
 
     .checklist-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 10px;
+      width: 100%;
     }
 
     .check-item {
+      min-width: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 14px;
       padding: 12px 14px;
       border-left: 4px solid #94a3b8;
       border-radius: 8px;
@@ -465,23 +476,61 @@
       background: #f8fafc;
     }
 
+    .check-item > span:first-child {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
     .check-item.ok { border-left-color: #22c55e; }
     .check-item.pendencia { border-left-color: #f59e0b; }
     .check-item.nao { border-left-color: #ef4444; }
     .check-item.na { border-left-color: #94a3b8; }
 
     .badge {
+      flex: 0 0 auto;
       padding: 4px 9px;
       border-radius: 20px;
       font-size: 0.72rem;
       font-weight: 700;
-      white-space: nowrap;
+      white-space: normal;
+      text-align: center;
     }
 
     .badge.ok { color: #166534; background: #dcfce7; }
     .badge.pendencia { color: #92400e; background: #fef3c7; }
     .badge.nao { color: #991b1b; background: #fee2e2; }
     .badge.na { color: #475569; background: #f1f5f9; }
+
+    .imagem-assinatura {
+      display: block;
+      width: min(100%, 300px);
+      max-height: 180px;
+      margin-top: 8px;
+      object-fit: contain;
+      object-position: left center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+    }
+
+    .link-imagem {
+      display: inline-block;
+      margin-top: 8px;
+      color: var(--blue-light);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .link-imagem:hover {
+      text-decoration: underline;
+    }
+
+    .check-item.conteudo-imagem {
+      align-items: flex-start;
+      flex-direction: column;
+    }
 
     @media (max-width: 650px) {
       .hero {
@@ -509,7 +558,8 @@
         padding: 16px 18px;
       }
 
-      th, td {
+      th,
+      td {
         padding: 14px 12px;
       }
 
@@ -518,12 +568,37 @@
         display: none;
       }
 
-      .checklist-grid {
-        grid-template-columns: 1fr;
+      .modal-overlay {
+        align-items: flex-start;
+        padding: 8px;
+      }
+
+      .modal {
+        max-height: 96vh;
+        border-radius: 14px;
+      }
+
+      .modal-header {
+        padding: 16px;
       }
 
       .modal-body {
-        padding: 18px;
+        max-height: calc(96vh - 68px);
+        padding: 16px;
+      }
+
+      .info-row {
+        grid-template-columns: 1fr;
+      }
+
+      .check-item {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .badge {
+        align-self: flex-start;
       }
     }
   </style>
@@ -625,7 +700,9 @@
         } else if ((char === "\n" || char === "\r") && !insideQuotes) {
           if (char === "\r" && nextChar === "\n") i++;
           row.push(value.trim());
+
           if (row.some(item => item !== "")) rows.push(row);
+
           row = [];
           value = "";
         } else {
@@ -635,7 +712,10 @@
 
       if (value || row.length) {
         row.push(value.trim());
-        if (row.some(item => item !== "")) rows.push(row);
+
+        if (row.some(item => item !== "")) {
+          rows.push(row);
+        }
       }
 
       return rows;
@@ -673,6 +753,79 @@
     function badgeHTML(valor) {
       const tipo = classificar(valor);
       return `<span class="badge ${tipo}">${escaparHTML(valor || "N.A")}</span>`;
+    }
+
+    function encontrarLink(valor) {
+      const texto = String(valor || "").trim();
+      const encontrado = texto.match(/https?:\/\/[^\s]+/i);
+
+      return encontrado ? encontrado[0].replace(/[),.;]+$/, "") : "";
+    }
+
+    function prepararLinkImagem(link) {
+      if (!link) return "";
+
+      try {
+        const url = new URL(link);
+
+        if (url.hostname.includes("drive.google.com")) {
+          const id =
+            url.searchParams.get("id") ||
+            url.pathname.match(/\/d\/([^/]+)/)?.[1];
+
+          if (id) {
+            return `https://drive.google.com/uc?export=view&id=${id}`;
+          }
+        }
+
+        return link;
+      } catch {
+        return link;
+      }
+    }
+
+    function valorHTML(titulo, valor) {
+      const link = encontrarLink(valor);
+
+      if (!link) {
+        return badgeHTML(valor);
+      }
+
+      const linkImagem = prepararLinkImagem(link);
+      const nomeCampo = normalizarTexto(titulo);
+
+      if (nomeCampo.includes("ASS") || nomeCampo.includes("FOTO") || nomeCampo.includes("IMAGEM")) {
+        return `
+          <span class="conteudo-imagem">
+            <img
+              class="imagem-assinatura"
+              src="${escaparHTML(linkImagem)}"
+              alt="${escaparHTML(titulo || "Imagem")}"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';"
+            >
+            <a
+              class="link-imagem"
+              href="${escaparHTML(link)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="display: none;"
+            >
+              Abrir imagem
+            </a>
+          </span>
+        `;
+      }
+
+      return `
+        <a
+          class="link-imagem"
+          href="${escaparHTML(link)}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Abrir link
+        </a>
+      `;
     }
 
     function exibirDados(lista) {
@@ -721,6 +874,7 @@
 
     function limparPesquisa() {
       const campo = document.getElementById("pesquisaPlaca");
+
       campo.value = "";
       filtrarPlacas();
       campo.focus();
@@ -779,7 +933,9 @@
         }
 
         headers = rows[0] || [];
-        dados = rows.slice(1).filter(row => row.some(celula => celula.trim() !== ""));
+        dados = rows.slice(1).filter(row =>
+          row.some(celula => celula.trim() !== "")
+        );
 
         if (!dados.length) {
           throw new Error("Nenhum caminhão foi encontrado na planilha.");
@@ -825,17 +981,26 @@
       for (let i = 4; i < headers.length; i++) {
         const titulo = headers[i] || "";
         const valor = row[i] || "";
+        const link = encontrarLink(valor);
 
-        if (titulo.toUpperCase().includes("FOTO") || titulo.toUpperCase() === "*****") {
+        if (
+          titulo.toUpperCase() === "*****" &&
+          !link
+        ) {
           continue;
         }
 
         const tipo = classificar(valor);
+        const possuiImagem = link && (
+          normalizarTexto(titulo).includes("ASS") ||
+          normalizarTexto(titulo).includes("FOTO") ||
+          normalizarTexto(titulo).includes("IMAGEM")
+        );
 
         html += `
-          <div class="check-item ${tipo}">
-            <span>${escaparHTML(titulo)}</span>
-            ${badgeHTML(valor)}
+          <div class="check-item ${tipo} ${possuiImagem ? "conteudo-imagem" : ""}">
+            <span>${escaparHTML(titulo || "Item do checklist")}</span>
+            ${valorHTML(titulo, valor)}
           </div>
         `;
       }
@@ -844,10 +1009,12 @@
 
       document.getElementById("modal-body").innerHTML = html;
       document.getElementById("modal").classList.add("active");
+      document.body.style.overflow = "hidden";
     }
 
     function fecharModal() {
       document.getElementById("modal").classList.remove("active");
+      document.body.style.overflow = "";
     }
 
     async function alternarTelaCheia() {
