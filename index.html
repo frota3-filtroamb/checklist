@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#071a3d">
+  <title>FiltroAmb | Checklist</title>
+
+  <style>
+    :root {
+      --navy:#071a3d;--blue:#123d86;--blue-light:#2563c7;
+      --cyan:#28b8d8;--bg:#eef3f8;--text:#172033;
+      --muted:#64748b;--border:#e2e8f0;--white:#fff;
+      --shadow:0 18px 45px rgba(15,44,107,.12);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+
+    body{
+      min-height:100vh;color:var(--text);
+      background:radial-gradient(circle at 10% 0%,rgba(40,184,216,.1),transparent 28%),var(--bg);
+      font-family:"Segoe UI",system-ui,sans-serif
+    }
+
+    button,input{font:inherit}
+
+    .hero{
+      position:relative;min-height:315px;display:flex;align-items:center;
+      justify-content:center;overflow:hidden;color:white;text-align:center;
+      background:
+        linear-gradient(115deg,rgba(4,22,56,.85),rgba(12,58,123,.68)),
+        url("fundo.jpg") center/cover no-repeat
+    }
+
+    .hero:before{
+      content:"";position:absolute;inset:0;opacity:.42;
+      background:linear-gradient(135deg,rgba(3,18,47,.32),rgba(40,184,216,.2))
+    }
+
+    .hero:after{
+      content:"";position:absolute;right:-10%;bottom:-120px;left:-10%;
+      height:190px;border-radius:50% 50% 0 0;background:var(--bg)
+    }
+
+    .hero-content{position:relative;z-index:2;padding:40px 20px 70px}
+
+    .brand-mark{
+      width:64px;height:64px;display:grid;place-items:center;margin:0 auto 18px;
+      border:1px solid rgba(255,255,255,.3);border-radius:18px;font-size:1.8rem;
+      background:rgba(255,255,255,.12);box-shadow:0 12px 30px rgba(0,0,0,.18)
+    }
+
+    .hero h1{margin-bottom:4px;font-size:clamp(2.3rem,5vw,3.8rem);font-weight:800;letter-spacing:.8px}
+    .hero p{color:#cfe5ff;font-size:1.15rem;font-weight:500;letter-spacing:3px;text-transform:uppercase}
+
+    .fullscreen-btn{
+      position:absolute;z-index:4;top:22px;right:24px;display:inline-flex;
+      align-items:center;gap:8px;padding:10px 15px;border:1px solid rgba(255,255,255,.28);
+      border-radius:10px;color:white;cursor:pointer;background:rgba(255,255,255,.12)
+    }
+
+    .container{position:relative;z-index:5;max-width:1080px;margin:-55px auto 48px;padding:0 18px}
+
+    .card{
+      overflow:hidden;margin-bottom:22px;border:1px solid rgba(255,255,255,.8);
+      border-radius:20px;background:white;box-shadow:var(--shadow)
+    }
+
+    .card-header{
+      display:flex;align-items:center;justify-content:space-between;gap:20px;
+      padding:22px 26px;border-bottom:1px solid var(--border)
+    }
+
+    .card-header h2{color:var(--navy);font-size:1.15rem}
+    .card-header p{margin-top:4px;color:var(--muted);font-size:.88rem}
+    .header-actions{display:flex;align-items:center;gap:18px}
+
+    .status{display:flex;align-items:center;gap:7px;color:#15803d;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .status:before{content:"";width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px #dcfce7}
+    .status.erro{color:#b91c1c}
+    .status.erro:before{background:#ef4444;box-shadow:0 0 0 4px #fee2e2}
+
+    .archive-btn,.erro-carregamento button{
+      padding:10px 14px;border:0;border-radius:8px;color:white;cursor:pointer;background:var(--blue-light)
+    }
+
+    .archive-btn:hover,.erro-carregamento button:hover{background:var(--blue)}
+
+    .search-area{padding:18px 26px;border-bottom:1px solid var(--border);background:#f8fafc}
+    .search-label{display:block;margin-bottom:7px;color:var(--navy);font-size:.86rem;font-weight:700}
+    .search-controls{display:flex;align-items:center;gap:12px}
+    .search-box{position:relative;width:min(100%,420px)}
+    .search-box span{position:absolute;top:50%;left:14px;color:var(--muted);transform:translateY(-50%)}
+
+    #pesquisaPlaca{
+      width:100%;padding:12px 42px 12px 40px;border:1px solid #cbd5e1;
+      border-radius:10px;outline:none;color:var(--text);background:white
+    }
+
+    #pesquisaPlaca:focus{border-color:var(--blue-light);box-shadow:0 0 0 3px rgba(37,99,199,.14)}
+
+    #limparPesquisa{
+      position:absolute;top:50%;right:10px;display:none;width:26px;height:26px;
+      border:0;border-radius:50%;color:var(--muted);cursor:pointer;background:#e2e8f0;
+      transform:translateY(-50%)
+    }
+
+    table{width:100%;border-collapse:collapse}
+
+    th{
+      padding:15px 22px;color:#dbeafe;background:var(--navy);font-size:.78rem;
+      letter-spacing:.5px;text-align:left;text-transform:uppercase
+    }
+
+    td{padding:17px 22px;border-bottom:1px solid #edf1f5;font-size:.92rem}
+    tbody tr:hover{background:#f7fbff}
+    .placa-celula{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+
+    .historico-btn{
+      padding:5px 9px;border:1px solid #bfdbfe;border-radius:7px;color:var(--blue);
+      cursor:pointer;font-size:.75rem;font-weight:700;background:#eff6ff
+    }
+
+    .historico-btn:hover{border-color:var(--blue-light);color:white;background:var(--blue-light)}
+
+    .btn-check{
+      width:40px;height:40px;display:inline-grid;place-items:center;border:0;
+      border-radius:11px;color:white;cursor:pointer;background:linear-gradient(135deg,var(--blue),var(--blue-light));
+      box-shadow:0 5px 12px rgba(37,99,199,.24)
+    }
+
+    .sem-resultados,.loading,.erro-carregamento{padding:35px 20px;color:var(--muted);text-align:center}
+    .loading{padding:70px 20px}
+    .erro-carregamento{color:#b91c1c;line-height:1.6}
+    .erro-carregamento button{margin-top:15px}
+
+    .modal-overlay{
+      position:fixed;z-index:1000;inset:0;display:none;align-items:center;
+      justify-content:center;padding:12px;background:rgba(3,13,32,.72);backdrop-filter:blur(5px)
+    }
+
+    .modal-overlay.active{display:flex}
+    .modal{width:min(100%,760px);max-height:94vh;overflow:hidden;border-radius:20px;background:white}
+
+    .modal-header{
+      display:flex;align-items:center;justify-content:space-between;padding:20px 24px;
+      color:white;background:var(--navy)
+    }
+
+    .modal-header h2{overflow-wrap:anywhere;font-size:1.15rem}
+
+    .close-btn{
+      width:36px;height:36px;border:1px solid rgba(255,255,255,.2);border-radius:9px;
+      color:white;cursor:pointer;font-size:1.4rem;background:rgba(255,255,255,.12)
+    }
+
+    .modal-body{max-height:calc(94vh - 78px);overflow-y:auto;padding:25px}
+    .historico-tabela{min-width:600px}
+    .historico-tabela th,.historico-tabela td{padding:12px 14px}
+    .info-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:24px}
+    .info-item,.check-item{padding:11px 14px;border:1px solid var(--border);border-radius:9px;background:#f8fafc}
+    .info-item{color:var(--muted);font-size:.86rem;overflow-wrap:anywhere}
+    .info-item strong{color:var(--navy)}
+    .checklist-grid{display:grid;gap:10px}
+
+    .check-item{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      border-left:4px solid #94a3b8;color:#334155;font-size:.86rem
+    }
+
+    .check-item.ok{border-left-color:#22c55e}
+    .check-item.pendencia{border-left-color:#f59e0b}
+    .check-item.nao{border-left-color:#ef4444}
+
+    .badge{
+      flex:0 0 auto;padding:4px 9px;border-radius:20px;font-size:.72rem;
+      font-weight:700;text-align:center
+    }
+
+    .badge.ok{color:#166534;background:#dcfce7}
+    .badge.pendencia{color:#92400e;background:#fef3c7}
+    .badge.nao{color:#991b1b;background:#fee2e2}
+    .badge.na{color:#475569;background:#f1f5f9}
+
+    .conteudo-imagem{align-items:flex-start;flex-direction:column}
+
+    .imagem-assinatura{
+      display:block;width:min(100%,300px);max-height:180px;object-fit:contain;
+      border:1px solid var(--border);border-radius:8px;background:white
+    }
+
+    .link-imagem{display:inline-block;margin-top:8px;color:var(--blue-light);font-size:.8rem;font-weight:600}
+
+    @media(max-width:650px){
+      .hero{min-height:270px}
+      .fullscreen-btn{top:14px;right:14px;padding:9px 11px;font-size:0}
+      .fullscreen-btn span{font-size:1.1rem}
+      .card-header{align-items:flex-start;flex-direction:column;padding:18px}
+      .header-actions{width:100%;justify-content:flex-end}
+      .search-area{padding:16px 18px}
+      .search-controls{align-items:stretch;flex-direction:column}
+      .search-box{width:100%}
+      .search-controls .archive-btn{width:100%}
+      th,td{padding:14px 12px}
+      th:nth-child(3),td:nth-child(3){display:none}
+      .modal-overlay{align-items:flex-start;padding:8px}
+      .modal{max-height:96vh;border-radius:14px}
+      .modal-body{max-height:calc(96vh - 68px);padding:16px}
+      .info-row{grid-template-columns:1fr}
+      .check-item{align-items:flex-start;flex-direction:column}
+    }
+  </style>
+</head>
+
+<body>
+  <header class="hero">
+    <button class="fullscreen-btn" onclick="alternarTelaCheia()" title="Alternar tela cheia">
+      <span>⛶</span><b>Tela cheia</b>
+    </button>
+
+    <div class="hero-content">
+      <div class="brand-mark">✓</div>
+      <h1>FiltroAmb</h1>
+      <p>Checklist</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2>Último checklist de cada placa</h2>
+          <p>A tabela exibe somente o checklist mais recente de cada caminhão</p>
+        </div>
+        <div class="header-actions">
+          <div class="status" id="status">Conectando...</div>
+        </div>
+      </div>
+
+      <div class="search-area">
+        <label class="search-label" for="pesquisaPlaca">Pesquisar placa do caminhão</label>
+
+        <div class="search-controls">
+          <div class="search-box">
+            <span>🔎</span>
+            <input type="search" id="pesquisaPlaca" placeholder="Digite a placa..." autocomplete="off" oninput="filtrarPlacas()">
+            <button id="limparPesquisa" onclick="limparPesquisa()" aria-label="Limpar pesquisa">×</button>
+          </div>
+
+          <button class="archive-btn" id="btnAntigos" onclick="alternarAntigos()" style="display:none">
+            Ver checklists antigos
+          </button>
+        </div>
+      </div>
+
+      <div id="loading" class="loading">Carregando dados...</div>
+
+      <table id="tabela" style="display:none">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Placa</th>
+            <th>Nome do motorista</th>
+            <th style="width:100px;text-align:center">Checklist</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+
+      <div id="semResultados" class="sem-resultados" style="display:none">
+        Nenhum caminhão encontrado para esta placa.
+      </div>
+    </section>
+
+    <section class="card" id="cardAntigos" style="display:none">
+      <div class="card-header">
+        <div>
+          <h2>Checklists antigos</h2>
+          <p>Registros anteriores ao último checklist de cada placa</p>
+        </div>
+      </div>
+
+      <table id="tabelaAntigos">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Placa</th>
+            <th>Nome do motorista</th>
+            <th style="width:100px;text-align:center">Checklist</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyAntigos"></tbody>
+      </table>
+
+      <div id="semAntigos" class="sem-resultados">
+        Nenhum checklist antigo encontrado.
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Checklist</h2>
+        <button class="close-btn" onclick="fecharModal()" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/1qrDeKu6-CtaJ02x26puLgi6eUON0CEJG3J9nR8dQoJA/export?format=csv&gid=1550304863";
+
+    let dados = [];
+    let headers = [];
+    let recentes = [];
+    let antigos = [];
+    let mostrandoAntigos = false;
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [], value = "", insideQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"' && insideQuotes && next === '"') {
+          value += '"';
+          i++;
+        } else if (char === '"') {
+          insideQuotes = !insideQuotes;
+        } else if (char === "," && !insideQuotes) {
+          row.push(value.trim());
+          value = "";
+        } else if ((char === "\n" || char === "\r") && !insideQuotes) {
+          if (char === "\r" && next === "\n") i++;
+          row.push(value.trim());
+
+          if (row.some(item => item !== "")) rows.push(row);
+
+          row = [];
+          value = "";
+        } else {
+          value += char;
+        }
+      }
+
+      if (value || row.length) {
+        row.push(value.trim());
+        if (row.some(item => item !== "")) rows.push(row);
+      }
+
+      return rows;
+    }
+
+    function escaparHTML(valor) {
+      return String(valor || "-")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function normalizarTexto(valor) {
+      return String(valor || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+    }
+
+    function dataParaNumero(valor) {
+      const texto = String(valor || "").trim();
+      let partes = texto.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+
+      if (partes) {
+        let ano = Number(partes[3]);
+        if (ano < 100) ano += 2000;
+
+        return new Date(
+          ano,
+          Number(partes[2]) - 1,
+          Number(partes[1])
+        ).getTime();
+      }
+
+      partes = texto.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+
+      if (partes) {
+        return new Date(
+          Number(partes[1]),
+          Number(partes[2]) - 1,
+          Number(partes[3])
+        ).getTime();
+      }
+
+      const timestamp = Date.parse(texto);
+      return Number.isNaN(timestamp) ? 0 : timestamp;
+    }
+
+    function formatarData(valor) {
+      const data = String(valor || "").trim();
+      if (!data) return "-";
+
+      let partes = data.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+
+      if (partes) {
+        return `${partes[1].padStart(2, "0")}/${partes[2].padStart(2, "0")}/${partes[3].slice(-2)}`;
+      }
+
+      partes = data.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+
+      if (partes) {
+        return `${partes[3].padStart(2, "0")}/${partes[2].padStart(2, "0")}/${partes[1].slice(-2)}`;
+      }
+
+      return data;
+    }
+
+    function classificar(valor) {
+      const v = String(valor || "").toUpperCase().trim();
+
+      if (v === "OK" || v === "SIM") return "ok";
+      if (v.includes("PENDEN")) return "pendencia";
+      if (v === "NÃO" || v === "NAO") return "nao";
+
+      return "na";
+    }
+
+    function badgeHTML(valor) {
+      const tipo = classificar(valor);
+      return `<span class="badge ${tipo}">${escaparHTML(valor || "N.A")}</span>`;
+    }
+
+    function encontrarLink(valor) {
+      const encontrado = String(valor || "").match(/https?:\/\/[^\s]+/i);
+      return encontrado ? encontrado[0].replace(/[),.;]+$/, "") : "";
+    }
+
+    function prepararLinkImagem(link) {
+      try {
+        const url = new URL(link);
+
+        if (url.hostname.includes("drive.google.com")) {
+          const id =
+            url.searchParams.get("id") ||
+            url.pathname.match(/\/d\/([^/]+)/)?.[1];
+
+          if (id) return `https://drive.google.com/uc?export=view&id=${id}`;
+        }
+
+        return link;
+      } catch {
+        return link;
+      }
+    }
+
+    function valorHTML(titulo, valor) {
+      const link = encontrarLink(valor);
+
+      if (!link) return badgeHTML(valor);
+
+      const nomeCampo = normalizarTexto(titulo);
+      const ehImagem =
+        nomeCampo.includes("FOTO") ||
+        nomeCampo.includes("IMAGEM") ||
+        titulo.includes("*****");
+
+      if (!ehImagem) {
+        return `
+          <a class="link-imagem" href="${escaparHTML(link)}"
+             target="_blank" rel="noopener noreferrer">Abrir link</a>
+        `;
+      }
+
+      const imagem = prepararLinkImagem(link);
+
+      return `
+        <span>
+          <img class="imagem-assinatura"
+            src="${escaparHTML(imagem)}"
+            alt="${escaparHTML(titulo || "Imagem")}"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+
+          <a class="link-imagem"
+            href="${escaparHTML(link)}"
+            target="_blank" rel="noopener noreferrer" style="display:none">
+            Abrir imagem
+          </a>
+        </span>
+      `;
+    }
+
+    function exibirTabela(lista, tbodyId, tabelaId, vazioId) {
+      const tbody = document.getElementById(tbodyId);
+      const tabela = document.getElementById(tabelaId);
+      const vazio = document.getElementById(vazioId);
+
+      tbody.innerHTML = "";
+
+      lista.forEach(item => {
+        const row = item.row;
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${escaparHTML(formatarData(row[0]))}</td>
+          <td>
+            <div class="placa-celula">
+              <strong>${escaparHTML(row[1])}</strong>
+              <button class="historico-btn"
+                onclick="abrirHistoricoPlaca(${item.index})"
+                title="Ver todos os checklists desta placa">
+                Histórico
+              </button>
+            </div>
+          </td>
+          <td>${escaparHTML(row[2])}</td>
+          <td style="text-align:center">
+            <button class="btn-check"
+              onclick="abrirChecklist(${item.index})"
+              title="Ver checklist completo">📋</button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      tabela.style.display = lista.length ? "table" : "none";
+      vazio.style.display = lista.length ? "none" : "block";
+    }
+
+    function filtrarPlacas() {
+      const termo = normalizarTexto(
+        document.getElementById("pesquisaPlaca").value
+      );
+
+      document.getElementById("limparPesquisa").style.display =
+        termo ? "block" : "none";
+
+      const filtrar = lista =>
+        lista.filter(item =>
+          normalizarTexto(item.row[1]).includes(termo)
+        );
+
+      exibirTabela(filtrar(recentes), "tbody", "tabela", "semResultados");
+
+      if (mostrandoAntigos) {
+        exibirTabela(
+          filtrar(antigos),
+          "tbodyAntigos",
+          "tabelaAntigos",
+          "semAntigos"
+        );
+      }
+    }
+
+    function limparPesquisa() {
+      document.getElementById("pesquisaPlaca").value = "";
+      filtrarPlacas();
+      document.getElementById("pesquisaPlaca").focus();
+    }
+
+    function alternarAntigos() {
+      mostrandoAntigos = !mostrandoAntigos;
+
+      document.getElementById("cardAntigos").style.display =
+        mostrandoAntigos ? "block" : "none";
+
+      document.getElementById("btnAntigos").textContent =
+        mostrandoAntigos
+          ? "Ocultar checklists antigos"
+          : "Ver checklists antigos";
+
+      if (mostrandoAntigos) filtrarPlacas();
+    }
+
+    function mostrarErro(mensagem) {
+      const loading = document.getElementById("loading");
+      const status = document.getElementById("status");
+
+      loading.className = "erro-carregamento";
+      loading.innerHTML = `
+        ${mensagem}<br>
+        <button onclick="carregarDados()">Tentar novamente</button>
+      `;
+
+      status.textContent = "Erro de conexão";
+      status.classList.add("erro");
+    }
+
+    function separarRegistrosPorPlaca() {
+      const ultimosPorPlaca = new Map();
+      const registrosAntigos = [];
+
+      dados.forEach(item => {
+        const placa = normalizarTexto(item.row[1]);
+        const chave = placa || `SEM_PLACA_${item.index}`;
+
+        if (!ultimosPorPlaca.has(chave)) {
+          ultimosPorPlaca.set(chave, item);
+        } else {
+          registrosAntigos.push(item);
+        }
+      });
+
+      recentes = Array.from(ultimosPorPlaca.values())
+        .sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+
+      antigos = registrosAntigos
+        .sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+    }
+
+    async function carregarDados() {
+      const loading = document.getElementById("loading");
+      const status = document.getElementById("status");
+
+      loading.className = "loading";
+      loading.textContent = "Carregando dados...";
+      loading.style.display = "block";
+
+      status.textContent = "Conectando...";
+      status.classList.remove("erro");
+
+      const controller = new AbortController();
+      const tempoLimite = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const response = await fetch(`${CSV_URL}&t=${Date.now()}`, {
+          cache: "no-store",
+          signal: controller.signal
+        });
+
+        clearTimeout(tempoLimite);
+
+        if (!response.ok) {
+          throw new Error(`Erro HTTP ${response.status}`);
+        }
+
+        const rows = parseCSV(await response.text());
+
+        if (rows.length < 2) {
+          throw new Error("Nenhum registro foi encontrado.");
+        }
+
+        headers = rows[0];
+
+        dados = rows.slice(1)
+          .filter(row => row.some(celula => celula.trim() !== ""))
+          .map((row, index) => ({ row, index }))
+          .sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+
+        separarRegistrosPorPlaca();
+        exibirTabela(recentes, "tbody", "tabela", "semResultados");
+
+        document.getElementById("btnAntigos").style.display =
+          antigos.length ? "inline-block" : "none";
+
+        loading.style.display = "none";
+        status.textContent = "Sistema conectado";
+      } catch (err) {
+        clearTimeout(tempoLimite);
+
+        mostrarErro(
+          err.name === "AbortError"
+            ? "A planilha demorou muito para responder."
+            : "Não foi possível carregar os dados da planilha."
+        );
+
+        console.error("Erro ao carregar CSV:", err);
+      }
+    }
+
+    function abrirHistoricoPlaca(index) {
+      const itemSelecionado = dados.find(
+        registro => registro.index === index
+      );
+
+      if (!itemSelecionado) return;
+
+      const placa = itemSelecionado.row[1] || "";
+      const placaNormalizada = normalizarTexto(placa);
+
+      const historico = dados.filter(item =>
+        normalizarTexto(item.row[1]) === placaNormalizada
+      );
+
+      document.getElementById("modal-title").textContent =
+        `Histórico da placa - ${placa}`;
+
+      let html = `
+        <p style="margin-bottom:16px;color:#64748b">
+          ${historico.length} checklist(s) encontrado(s) para esta placa.
+        </p>
+
+        <div style="overflow-x:auto">
+          <table class="historico-tabela">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Motorista</th>
+                <th style="text-align:center">Checklist</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      historico.forEach(item => {
+        html += `
+          <tr>
+            <td>${escaparHTML(formatarData(item.row[0]))}</td>
+            <td>${escaparHTML(item.row[2])}</td>
+            <td style="text-align:center">
+              <button class="btn-check"
+                onclick="abrirChecklist(${item.index})"
+                title="Ver checklist completo">📋</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      document.getElementById("modal-body").innerHTML = html;
+      document.getElementById("modal").classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+
+    function abrirChecklist(index) {
+      const item = dados.find(registro => registro.index === index);
+      if (!item) return;
+
+      const row = item.row;
+      const placa = row[1] || "";
+
+      document.getElementById("modal-title").textContent =
+        `Checklist - ${placa}`;
+
+      let html = `
+        <div class="info-row">
+          <div class="info-item"><strong>Data:</strong> ${escaparHTML(formatarData(row[0]))}</div>
+          <div class="info-item"><strong>Placa:</strong> ${escaparHTML(placa)}</div>
+          <div class="info-item"><strong>Motorista:</strong> ${escaparHTML(row[2])}</div>
+          <div class="info-item"><strong>KM:</strong> ${escaparHTML(row[3])}</div>
+        </div>
+
+        <div class="checklist-grid">
+      `;
+
+      for (let i = 4; i < headers.length; i++) {
+        const titulo = headers[i] || "";
+        const valor = row[i] || "";
+        const link = encontrarLink(valor);
+
+        if (titulo.trim() === "*****" && !link) continue;
+
+        const possuiImagem = link &&
+          ["FOTO", "IMAGEM"].some(texto =>
+            normalizarTexto(titulo).includes(texto)
+          );
+
+        html += `
+          <div class="check-item ${classificar(valor)} ${possuiImagem ? "conteudo-imagem" : ""}">
+            <span>${escaparHTML(titulo || "Item do checklist")}</span>
+            ${valorHTML(titulo, valor)}
+          </div>
+        `;
+      }
+
+      document.getElementById("modal-body").innerHTML =
+        html + "</div>";
+
+      document.getElementById("modal").classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+
+    function fecharModal() {
+      document.getElementById("modal").classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    async function alternarTelaCheia() {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        } else {
+          await document.exitFullscreen();
+        }
+      } catch (error) {
+        console.error("Tela cheia não disponível:", error);
+      }
+    }
+
+    document.getElementById("modal").addEventListener("click", event => {
+      if (event.target.id === "modal") fecharModal();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") fecharModal();
+    });
+
+    carregarDados();
+  </script>
+</body>
+</html>
