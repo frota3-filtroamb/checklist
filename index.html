@@ -18,7 +18,10 @@
 
     body{
       min-height:100vh;color:var(--text);
-      background:radial-gradient(circle at 10% 0%,rgba(40,184,216,.1),transparent 28%),var(--bg);
+      background:
+        linear-gradient(rgba(238,243,248,.82),rgba(238,243,248,.82)),
+        url("https://filtroamb.com.br/_next/image?url=%2Fhero-filtroamb-v4.png&w=3840&q=90")
+        center top/cover fixed no-repeat;
       font-family:"Segoe UI",system-ui,sans-serif
     }
 
@@ -29,7 +32,8 @@
       justify-content:center;overflow:hidden;color:white;text-align:center;
       background:
         linear-gradient(115deg,rgba(4,22,56,.85),rgba(12,58,123,.68)),
-        url("fundo.jpg") center/cover no-repeat
+        url("https://filtroamb.com.br/_next/image?url=%2Fhero-filtroamb-v4.png&w=3840&q=90")
+        center/cover no-repeat
     }
 
     .hero:before{
@@ -39,7 +43,7 @@
 
     .hero:after{
       content:"";position:absolute;right:-10%;bottom:-120px;left:-10%;
-      height:190px;border-radius:50% 50% 0 0;background:var(--bg)
+      height:190px;border-radius:50% 50% 0 0;background:rgba(238,243,248,.82)
     }
 
     .hero-content{position:relative;z-index:2;padding:40px 20px 70px}
@@ -63,12 +67,14 @@
 
     .card{
       overflow:hidden;margin-bottom:22px;border:1px solid rgba(255,255,255,.8);
-      border-radius:20px;background:white;box-shadow:var(--shadow)
+      border-radius:20px;background:rgba(255,255,255,.94);box-shadow:var(--shadow);
+      backdrop-filter:blur(5px)
     }
 
     .card-header{
       display:flex;align-items:center;justify-content:space-between;gap:20px;
-      padding:22px 26px;border-bottom:1px solid var(--border)
+      padding:22px 26px;border-bottom:1px solid var(--border);
+      background:rgba(255,255,255,.84)
     }
 
     .card-header h2{color:var(--navy);font-size:1.15rem}
@@ -86,7 +92,7 @@
 
     .archive-btn:hover,.erro-carregamento button:hover{background:var(--blue)}
 
-    .search-area{padding:18px 26px;border-bottom:1px solid var(--border);background:#f8fafc}
+    .search-area{padding:18px 26px;border-bottom:1px solid var(--border);background:rgba(248,250,252,.86)}
     .search-label{display:block;margin-bottom:7px;color:var(--navy);font-size:.86rem;font-weight:700}
     .search-controls{display:flex;align-items:center;gap:12px}
     .search-box{position:relative;width:min(100%,420px)}
@@ -108,7 +114,7 @@
     table{width:100%;border-collapse:collapse}
 
     th{
-      padding:15px 22px;color:#dbeafe;background:var(--navy);font-size:.78rem;
+      padding:15px 22px;color:#dbeafe;background:rgba(7,26,61,.92);font-size:.78rem;
       letter-spacing:.5px;text-align:left;text-transform:uppercase
     }
 
@@ -171,6 +177,20 @@
     .check-item.ok{border-left-color:#22c55e}
     .check-item.pendencia{border-left-color:#f59e0b}
     .check-item.nao{border-left-color:#ef4444}
+
+    .observacao-item{
+      display:block!important;border-left-color:#2563c7!important;
+      background:#eff6ff!important
+    }
+
+    .observacao-item strong{
+      display:block;margin-bottom:7px;color:var(--navy);font-size:.86rem
+    }
+
+    .observacao-texto{
+      display:block;color:#334155;white-space:pre-wrap;overflow-wrap:anywhere;
+      line-height:1.5
+    }
 
     .badge{
       flex:0 0 auto;padding:4px 9px;border-radius:20px;font-size:.72rem;
@@ -371,6 +391,14 @@
         .replace(/[^A-Z0-9]/g, "");
     }
 
+    function encontrarIndiceCabecalho(texto) {
+      const procurado = normalizarTexto(texto);
+
+      return headers.findIndex(cabecalho =>
+        normalizarTexto(cabecalho).includes(procurado)
+      );
+    }
+
     function dataParaNumero(valor) {
       const texto = String(valor || "").trim();
       let partes = texto.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
@@ -379,21 +407,13 @@
         let ano = Number(partes[3]);
         if (ano < 100) ano += 2000;
 
-        return new Date(
-          ano,
-          Number(partes[2]) - 1,
-          Number(partes[1])
-        ).getTime();
+        return new Date(ano, Number(partes[2]) - 1, Number(partes[1])).getTime();
       }
 
       partes = texto.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
 
       if (partes) {
-        return new Date(
-          Number(partes[1]),
-          Number(partes[2]) - 1,
-          Number(partes[3])
-        ).getTime();
+        return new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3])).getTime();
       }
 
       const timestamp = Date.parse(texto);
@@ -493,6 +513,15 @@
       `;
     }
 
+    function observacaoHTML(titulo, valor) {
+      return `
+        <div class="check-item observacao-item">
+          <strong>${escaparHTML(titulo || "OBS")}</strong>
+          <span class="observacao-texto">${escaparHTML(valor || "Nenhuma observação informada.")}</span>
+        </div>
+      `;
+    }
+
     function exibirTabela(lista, tbodyId, tabelaId, vazioId) {
       const tbody = document.getElementById(tbodyId);
       const tabela = document.getElementById(tabelaId);
@@ -532,27 +561,18 @@
     }
 
     function filtrarPlacas() {
-      const termo = normalizarTexto(
-        document.getElementById("pesquisaPlaca").value
-      );
+      const termo = normalizarTexto(document.getElementById("pesquisaPlaca").value);
 
       document.getElementById("limparPesquisa").style.display =
         termo ? "block" : "none";
 
       const filtrar = lista =>
-        lista.filter(item =>
-          normalizarTexto(item.row[1]).includes(termo)
-        );
+        lista.filter(item => normalizarTexto(item.row[1]).includes(termo));
 
       exibirTabela(filtrar(recentes), "tbody", "tabela", "semResultados");
 
       if (mostrandoAntigos) {
-        exibirTabela(
-          filtrar(antigos),
-          "tbodyAntigos",
-          "tabelaAntigos",
-          "semAntigos"
-        );
+        exibirTabela(filtrar(antigos), "tbodyAntigos", "tabelaAntigos", "semAntigos");
       }
     }
 
@@ -634,9 +654,7 @@
 
         clearTimeout(tempoLimite);
 
-        if (!response.ok) {
-          throw new Error(`Erro HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
 
         const rows = parseCSV(await response.text());
 
@@ -673,10 +691,7 @@
     }
 
     function abrirHistoricoPlaca(index) {
-      const itemSelecionado = dados.find(
-        registro => registro.index === index
-      );
-
+      const itemSelecionado = dados.find(registro => registro.index === index);
       if (!itemSelecionado) return;
 
       const placa = itemSelecionado.row[1] || "";
@@ -737,6 +752,8 @@
 
       const row = item.row;
       const placa = row[1] || "";
+      const indiceAss = encontrarIndiceCabecalho("ASS");
+      const indiceObs = encontrarIndiceCabecalho("OBS");
 
       document.getElementById("modal-title").textContent =
         `Checklist - ${placa}`;
@@ -757,7 +774,7 @@
         const valor = row[i] || "";
         const link = encontrarLink(valor);
 
-        if (titulo.trim() === "*****" && !link) continue;
+        if (i === indiceObs || (titulo.trim() === "*****" && !link)) continue;
 
         const possuiImagem = link &&
           ["FOTO", "IMAGEM"].some(texto =>
@@ -770,6 +787,20 @@
             ${valorHTML(titulo, valor)}
           </div>
         `;
+
+        if (i === indiceAss && indiceObs >= 0) {
+          html += observacaoHTML(
+            headers[indiceObs] || "OBS",
+            row[indiceObs] || ""
+          );
+        }
+      }
+
+      if (indiceObs >= 0 && indiceAss < 0) {
+        html += observacaoHTML(
+          headers[indiceObs] || "OBS",
+          row[indiceObs] || ""
+        );
       }
 
       document.getElementById("modal-body").innerHTML =
