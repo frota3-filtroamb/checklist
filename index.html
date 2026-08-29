@@ -86,11 +86,11 @@
     .status.erro{color:#b91c1c}
     .status.erro:before{background:#ef4444;box-shadow:0 0 0 4px #fee2e2}
 
-    .archive-btn,.erro-carregamento button{
+    .archive-btn,.erro-carregamento button,.download-btn{
       padding:10px 14px;border:0;border-radius:8px;color:white;cursor:pointer;background:var(--blue-light)
     }
 
-    .archive-btn:hover,.erro-carregamento button:hover{background:var(--blue)}
+    .archive-btn:hover,.erro-carregamento button:hover,.download-btn:hover{background:var(--blue)}
 
     .search-area{padding:18px 26px;border-bottom:1px solid var(--border);background:rgba(248,250,252,.86)}
     .search-label{display:block;margin-bottom:7px;color:var(--navy);font-size:.86rem;font-weight:700}
@@ -129,11 +129,14 @@
 
     .historico-btn:hover{border-color:var(--blue-light);color:white;background:var(--blue-light)}
 
-    .btn-check{
+    .btn-check,.btn-download{
       width:40px;height:40px;display:inline-grid;place-items:center;border:0;
       border-radius:11px;color:white;cursor:pointer;background:linear-gradient(135deg,var(--blue),var(--blue-light));
       box-shadow:0 5px 12px rgba(37,99,199,.24)
     }
+
+    .btn-download{background:#15803d}
+    .btn-download:hover{background:#166534}
 
     .sem-resultados,.loading,.erro-carregamento{padding:35px 20px;color:var(--muted);text-align:center}
     .loading{padding:70px 20px}
@@ -281,7 +284,7 @@
             <th>Data</th>
             <th>Placa</th>
             <th>Nome do motorista</th>
-            <th style="width:100px;text-align:center">Checklist</th>
+            <th style="width:150px;text-align:center">Ações</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -306,7 +309,7 @@
             <th>Data</th>
             <th>Placa</th>
             <th>Nome do motorista</th>
-            <th style="width:100px;text-align:center">Checklist</th>
+            <th style="width:150px;text-align:center">Ações</th>
           </tr>
         </thead>
         <tbody id="tbodyAntigos"></tbody>
@@ -443,95 +446,82 @@
       const v = String(valor || "").toUpperCase().trim();
 
       if (v === "OK" || v === "SIM") return "ok";
-      if (v.includes("PENDEN")) return "pendencia";
+      if (v === "PENDÊNCIA" || v === "PENDENCIA") return "pendencia";
       if (v === "NÃO" || v === "NAO") return "nao";
-
       return "na";
     }
 
-    function badgeHTML(valor) {
-      const tipo = classificar(valor);
-      return `<span class="badge ${tipo}">${escaparHTML(valor || "N.A")}</span>`;
-    }
-
-    function encontrarLink(valor) {
-      const encontrado = String(valor || "").match(/https?:\/\/[^\s]+/i);
-      return encontrado ? encontrado[0].replace(/[),.;]+$/, "") : "";
-    }
-
-    function prepararLinkImagem(link) {
-      try {
-        const url = new URL(link);
-
-        if (url.hostname.includes("drive.google.com")) {
-          const id =
-            url.searchParams.get("id") ||
-            url.pathname.match(/\/d\/([^/]+)/)?.[1];
-
-          if (id) return `https://drive.google.com/uc?export=view&id=${id}`;
-        }
-
-        return link;
-      } catch {
-        return link;
-      }
-    }
-
     function valorHTML(titulo, valor) {
-      const link = encontrarLink(valor);
+      const v = String(valor || "").trim();
+      if (!v) return '<span class="badge na">N/A</span>';
 
-      if (!link) return badgeHTML(valor);
+      const classe = classificar(v);
 
-      const nomeCampo = normalizarTexto(titulo);
+      if (classe === "ok") return '<span class="badge ok">OK</span>';
+      if (classe === "pendencia") return '<span class="badge pendencia">PENDÊNCIA</span>';
+      if (classe === "nao") return '<span class="badge nao">NÃO</span>';
+
       const ehImagem =
-        nomeCampo.includes("FOTO") ||
-        nomeCampo.includes("IMAGEM") ||
-        titulo.includes("*****");
+        /\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(v) ||
+        v.includes("drive.google.com") ||
+        v.includes("lh3.googleusercontent.com");
+
+      const link = v.replace(/\/view\?usp=sharing$/, "/preview");
 
       if (!ehImagem) {
         return `
           <a class="link-imagem" href="${escaparHTML(link)}"
-             target="_blank" rel="noopener noreferrer">Abrir link</a>
+             target="_blank" rel="noopener noreferrer">
+            Abrir link
+          </a>
         `;
       }
 
-      const imagem = prepararLinkImagem(link);
-
       return `
         <span>
-          <img class="imagem-assinatura"
-            src="${escaparHTML(imagem)}"
-            alt="${escaparHTML(titulo || "Imagem")}"
-            onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+          <img class="imagem-assinatura" src="${escaparHTML(link)}" alt="${escaparHTML(titulo)}"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
 
           <a class="link-imagem"
             href="${escaparHTML(link)}"
-            target="_blank" rel="noopener noreferrer" style="display:none">
+            target="_blank" rel="noopener noreferrer"
+            style="display:none">
             Abrir imagem
           </a>
         </span>
       `;
     }
 
-    function observacaoHTML(titulo, valor) {
+    function criarObservacaoHTML(titulo, valor) {
       return `
         <div class="check-item observacao-item">
           <strong>${escaparHTML(titulo || "OBS")}</strong>
-          <span class="observacao-texto">${escaparHTML(valor || "Nenhuma observação informada.")}</span>
+          <span class="observacao-texto">
+            ${escaparHTML(valor || "Nenhuma observação informada.")}
+          </span>
         </div>
       `;
     }
 
-    function exibirTabela(lista, tbodyId, tabelaId, vazioId) {
+    function exibirTabela(lista, tbodyId, tabelaId, semResultadosId) {
       const tbody = document.getElementById(tbodyId);
       const tabela = document.getElementById(tabelaId);
-      const vazio = document.getElementById(vazioId);
+      const semResultados = document.getElementById(semResultadosId);
 
       tbody.innerHTML = "";
 
+      if (!lista || lista.length === 0) {
+        tabela.style.display = "none";
+        semResultados.style.display = "block";
+        return;
+      }
+
+      tabela.style.display = "table";
+      semResultados.style.display = "none";
+
       lista.forEach(item => {
-        const row = item.row;
         const tr = document.createElement("tr");
+        const row = item.row;
 
         tr.innerHTML = `
           <td>${escaparHTML(formatarData(row[0]))}</td>
@@ -539,8 +529,7 @@
             <div class="placa-celula">
               <strong>${escaparHTML(row[1])}</strong>
               <button class="historico-btn"
-                onclick="abrirHistoricoPlaca(${item.index})"
-                title="Ver todos os checklists desta placa">
+                onclick="abrirHistoricoPlaca(${item.index})">
                 Histórico
               </button>
             </div>
@@ -550,172 +539,223 @@
             <button class="btn-check"
               onclick="abrirChecklist(${item.index})"
               title="Ver checklist completo">📋</button>
+
+            <button class="btn-download"
+              onclick="baixarChecklist(${item.index})"
+              title="Baixar respostas do checklist">⬇</button>
           </td>
         `;
 
         tbody.appendChild(tr);
       });
-
-      tabela.style.display = lista.length ? "table" : "none";
-      vazio.style.display = lista.length ? "none" : "block";
     }
 
     function filtrarPlacas() {
-      const termo = normalizarTexto(document.getElementById("pesquisaPlaca").value);
+      const termo = normalizarTexto(
+        document.getElementById("pesquisaPlaca").value
+      );
 
       document.getElementById("limparPesquisa").style.display =
         termo ? "block" : "none";
 
-      const filtrar = lista =>
+      const filtrar = (lista) =>
         lista.filter(item => normalizarTexto(item.row[1]).includes(termo));
 
       exibirTabela(filtrar(recentes), "tbody", "tabela", "semResultados");
 
       if (mostrandoAntigos) {
-        exibirTabela(filtrar(antigos), "tbodyAntigos", "tabelaAntigos", "semAntigos");
+        exibirTabela(
+          filtrar(antigos),
+          "tbodyAntigos",
+          "tabelaAntigos",
+          "semAntigos"
+        );
       }
     }
 
     function limparPesquisa() {
       document.getElementById("pesquisaPlaca").value = "";
       filtrarPlacas();
-      document.getElementById("pesquisaPlaca").focus();
     }
 
     function alternarAntigos() {
+      const card = document.getElementById("cardAntigos");
+      const btn = document.getElementById("btnAntigos");
+
       mostrandoAntigos = !mostrandoAntigos;
 
-      document.getElementById("cardAntigos").style.display =
-        mostrandoAntigos ? "block" : "none";
-
-      document.getElementById("btnAntigos").textContent =
-        mostrandoAntigos
-          ? "Ocultar checklists antigos"
-          : "Ver checklists antigos";
-
-      if (mostrandoAntigos) filtrarPlacas();
+      if (mostrandoAntigos) {
+        card.style.display = "block";
+        btn.textContent = "Ocultar checklists antigos";
+        filtrarPlacas();
+      } else {
+        card.style.display = "none";
+        btn.textContent = "Ver checklists antigos";
+      }
     }
 
-    function mostrarErro(mensagem) {
-      const loading = document.getElementById("loading");
-      const status = document.getElementById("status");
+    function processarDados(rows) {
+      if (!rows || rows.length < 2) return;
 
-      loading.className = "erro-carregamento";
-      loading.innerHTML = `
-        ${mensagem}<br>
-        <button onclick="carregarDados()">Tentar novamente</button>
-      `;
+      headers = rows[0];
 
-      status.textContent = "Erro de conexão";
-      status.classList.add("erro");
-    }
+      const idxData = encontrarIndiceCabecalho("Carimbo de data/hora");
+      const idxPlaca = encontrarIndiceCabecalho("Placa do caminhão");
+      const idxNome = encontrarIndiceCabecalho("Nome do motorista");
+      const idxKm = encontrarIndiceCabecalho("KM atual");
 
-    function separarRegistrosPorPlaca() {
-      const ultimosPorPlaca = new Map();
-      const registrosAntigos = [];
+      dados = rows.slice(1).map((row, index) => {
+        const item = [
+          idxData !== -1 ? row[idxData] : row[0],
+          idxPlaca !== -1 ? row[idxPlaca] : row[1],
+          idxNome !== -1 ? row[idxNome] : row[2],
+          idxKm !== -1 ? row[idxKm] : row[3],
+        ];
+
+        headers.forEach((h, i) => {
+          if (![idxData, idxPlaca, idxNome, idxKm].includes(i)) {
+            item.push(row[i]);
+          }
+        });
+
+        return { index, row: item };
+      });
+
+      const porPlaca = {};
 
       dados.forEach(item => {
         const placa = normalizarTexto(item.row[1]);
-        const chave = placa || `SEM_PLACA_${item.index}`;
-
-        if (!ultimosPorPlaca.has(chave)) {
-          ultimosPorPlaca.set(chave, item);
-        } else {
-          registrosAntigos.push(item);
-        }
+        if (!porPlaca[placa]) porPlaca[placa] = [];
+        porPlaca[placa].push(item);
       });
 
-      recentes = Array.from(ultimosPorPlaca.values())
-        .sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+      recentes = [];
+      antigos = [];
 
-      antigos = registrosAntigos
-        .sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+      Object.values(porPlaca).forEach(grupo => {
+        grupo.sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+        recentes.push(grupo[0]);
+        antigos.push(...grupo.slice(1));
+      });
+
+      recentes.sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+      antigos.sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+    }
+
+    function escaparCSV(valor) {
+      return `"${String(valor ?? "").replace(/"/g, '""')}"`;
+    }
+
+    function baixarChecklist(index) {
+      const item = dados.find(registro => registro.index === index);
+
+      if (!item) {
+        alert("Checklist não encontrado.");
+        return;
+      }
+
+      const conteudoCSV = [
+        headers.map(escaparCSV).join(","),
+        headers.map((_, indice) => escaparCSV(item.row[indice] || "")).join(",")
+      ].join("\r\n");
+
+      const blob = new Blob(
+        ["\uFEFF" + conteudoCSV],
+        { type: "text/csv;charset=utf-8;" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const placa = String(item.row[1] || "sem-placa")
+        .replace(/[^a-z0-9]/gi, "-")
+        .toUpperCase();
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `checklist-${placa}-${Date.now()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     }
 
     async function carregarDados() {
       const loading = document.getElementById("loading");
       const status = document.getElementById("status");
 
-      loading.className = "loading";
-      loading.textContent = "Carregando dados...";
-      loading.style.display = "block";
-
-      status.textContent = "Conectando...";
-      status.classList.remove("erro");
-
-      const controller = new AbortController();
-      const tempoLimite = setTimeout(() => controller.abort(), 15000);
-
       try {
-        const response = await fetch(`${CSV_URL}&t=${Date.now()}`, {
-          cache: "no-store",
-          signal: controller.signal
-        });
+        status.className = "status";
+        status.textContent = "Conectando...";
 
-        clearTimeout(tempoLimite);
+        const response = await fetch(CSV_URL);
 
-        if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
-
-        const rows = parseCSV(await response.text());
-
-        if (rows.length < 2) {
-          throw new Error("Nenhum registro foi encontrado.");
+        if (!response.ok) {
+          throw new Error(`Erro na requisição: ${response.status}`);
         }
 
-        headers = rows[0];
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
 
-        dados = rows.slice(1)
-          .filter(row => row.some(celula => celula.trim() !== ""))
-          .map((row, index) => ({ row, index }))
-          .sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
-
-        separarRegistrosPorPlaca();
-        exibirTabela(recentes, "tbody", "tabela", "semResultados");
-
-        document.getElementById("btnAntigos").style.display =
-          antigos.length ? "inline-block" : "none";
+        processarDados(rows);
 
         loading.style.display = "none";
-        status.textContent = "Sistema conectado";
+        status.className = "status";
+        status.textContent = "Atualizado em tempo real";
+
+        if (antigos.length > 0) {
+          document.getElementById("btnAntigos").style.display = "inline-block";
+        }
+
+        filtrarPlacas();
       } catch (err) {
-        clearTimeout(tempoLimite);
+        console.error(err);
+        loading.style.display = "none";
+        status.className = "status erro";
+        status.textContent = "Erro de conexão";
 
-        mostrarErro(
-          err.name === "AbortError"
-            ? "A planilha demorou muito para responder."
-            : "Não foi possível carregar os dados da planilha."
-        );
-
-        console.error("Erro ao carregar CSV:", err);
+        const container = document.querySelector(".card");
+        container.innerHTML += `
+          <div class="erro-carregamento">
+            Não foi possível carregar os dados da planilha.<br>
+            <button onclick="location.reload()">Tentar novamente</button>
+          </div>
+        `;
       }
     }
 
-    function abrirHistoricoPlaca(index) {
-      const itemSelecionado = dados.find(registro => registro.index === index);
-      if (!itemSelecionado) return;
+    function abrirModal() {
+      document.getElementById("modal").classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
 
-      const placa = itemSelecionado.row[1] || "";
+    function fecharModal() {
+      document.getElementById("modal").classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    function abrirHistoricoPlaca(index) {
+      const selecionado = dados.find(item => item.index === index);
+      if (!selecionado) return;
+
+      const placa = selecionado.row[1] || "";
       const placaNormalizada = normalizarTexto(placa);
 
       const historico = dados.filter(item =>
         normalizarTexto(item.row[1]) === placaNormalizada
       );
 
+      historico.sort((a, b) => dataParaNumero(b.row[0]) - dataParaNumero(a.row[0]));
+
       document.getElementById("modal-title").textContent =
-        `Histórico da placa - ${placa}`;
+        `Histórico de Checklists - ${placa}`;
 
       let html = `
-        <p style="margin-bottom:16px;color:#64748b">
-          ${historico.length} checklist(s) encontrado(s) para esta placa.
-        </p>
-
         <div style="overflow-x:auto">
           <table class="historico-tabela">
             <thead>
               <tr>
                 <th>Data</th>
                 <th>Motorista</th>
-                <th style="text-align:center">Checklist</th>
+                <th style="text-align:center">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -728,8 +768,10 @@
             <td>${escaparHTML(item.row[2])}</td>
             <td style="text-align:center">
               <button class="btn-check"
-                onclick="abrirChecklist(${item.index})"
-                title="Ver checklist completo">📋</button>
+                onclick="abrirChecklist(${item.index})">📋</button>
+
+              <button class="btn-download"
+                onclick="baixarChecklist(${item.index})">⬇</button>
             </td>
           </tr>
         `;
@@ -742,8 +784,7 @@
       `;
 
       document.getElementById("modal-body").innerHTML = html;
-      document.getElementById("modal").classList.add("active");
-      document.body.style.overflow = "hidden";
+      abrirModal();
     }
 
     function abrirChecklist(index) {
@@ -752,88 +793,77 @@
 
       const row = item.row;
       const placa = row[1] || "";
-      const indiceAss = encontrarIndiceCabecalho("ASS");
-      const indiceObs = encontrarIndiceCabecalho("OBS");
 
       document.getElementById("modal-title").textContent =
         `Checklist - ${placa}`;
 
       let html = `
+        <div style="display:flex;justify-content:flex-end;margin-bottom:15px">
+          <button class="download-btn" onclick="baixarChecklist(${index})">
+            ⬇ Baixar respostas
+          </button>
+        </div>
+
         <div class="info-row">
-          <div class="info-item"><strong>Data:</strong> ${escaparHTML(formatarData(row[0]))}</div>
-          <div class="info-item"><strong>Placa:</strong> ${escaparHTML(placa)}</div>
-          <div class="info-item"><strong>Motorista:</strong> ${escaparHTML(row[2])}</div>
-          <div class="info-item"><strong>KM:</strong> ${escaparHTML(row[3])}</div>
+          <div class="info-item">
+            <strong>Data:</strong> ${escaparHTML(formatarData(row[0]))}
+          </div>
+          <div class="info-item">
+            <strong>Placa:</strong> ${escaparHTML(placa)}
+          </div>
+          <div class="info-item">
+            <strong>Motorista:</strong> ${escaparHTML(row[2])}
+          </div>
+          <div class="info-item">
+            <strong>KM:</strong> ${escaparHTML(row[3])}
+          </div>
         </div>
 
         <div class="checklist-grid">
       `;
 
-      for (let i = 4; i < headers.length; i++) {
-        const titulo = headers[i] || "";
-        const valor = row[i] || "";
-        const link = encontrarLink(valor);
+      for (let i = 4; i < row.length; i++) {
+        const titulo = headers[i] || `Item ${i - 3}`;
+        const valor = row[i];
 
-        if (i === indiceObs || (titulo.trim() === "*****" && !link)) continue;
+        if (normalizarTexto(titulo).includes("OBS")) {
+          html += criarObservacaoHTML(titulo, valor);
+          continue;
+        }
 
-        const possuiImagem = link &&
-          ["FOTO", "IMAGEM"].some(texto =>
-            normalizarTexto(titulo).includes(texto)
-          );
+        const possuiImagem =
+          /\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(valor) ||
+          String(valor).includes("drive.google.com") ||
+          String(valor).includes("lh3.googleusercontent.com");
 
         html += `
-          <div class="check-item ${classificar(valor)} ${possuiImagem ? "conteudo-imagem" : ""}">
+          <div class="check-item ${classificar(valor)}
+            ${possuiImagem ? "conteudo-imagem" : ""}">
             <span>${escaparHTML(titulo || "Item do checklist")}</span>
             ${valorHTML(titulo, valor)}
           </div>
         `;
-
-        if (i === indiceAss && indiceObs >= 0) {
-          html += observacaoHTML(
-            headers[indiceObs] || "OBS",
-            row[indiceObs] || ""
-          );
-        }
       }
 
-      if (indiceObs >= 0 && indiceAss < 0) {
-        html += observacaoHTML(
-          headers[indiceObs] || "OBS",
-          row[indiceObs] || ""
-        );
-      }
-
-      document.getElementById("modal-body").innerHTML =
-        html + "</div>";
-
+      document.getElementById("modal-body").innerHTML = html + "</div>";
       document.getElementById("modal").classList.add("active");
       document.body.style.overflow = "hidden";
     }
 
-    function fecharModal() {
-      document.getElementById("modal").classList.remove("active");
-      document.body.style.overflow = "";
-    }
-
-    async function alternarTelaCheia() {
-      try {
-        if (!document.fullscreenElement) {
-          await document.documentElement.requestFullscreen();
-        } else {
-          await document.exitFullscreen();
-        }
-      } catch (error) {
-        console.error("Tela cheia não disponível:", error);
+    function alternarTelaCheia() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
       }
     }
 
-    document.getElementById("modal").addEventListener("click", event => {
-      if (event.target.id === "modal") fecharModal();
-    });
-
-    document.addEventListener("keydown", event => {
-      if (event.key === "Escape") fecharModal();
-    });
+    window.onclick = function(event) {
+      const modal = document.getElementById("modal");
+      if (event.target === modal) {
+        fecharModal();
+      }
+    };
 
     carregarDados();
   </script>
